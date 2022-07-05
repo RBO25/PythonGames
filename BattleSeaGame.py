@@ -74,6 +74,21 @@ b0.place(x=size_canvas_x+20, y=30)
 b1 = Button(tk, text="Start over", command = button_begin_again)
 b1.place(x=size_canvas_x+20, y=70)
 
+def draw_point(x, y):
+    print(enemy_ships[y][x])
+    if enemy_ships[y][x] == 0:
+        color = "red"
+        id1 = canvas.create_oval(x * step_x, y * step_y, x * step_x + step_x, y * step_y + step_y, fill=color)
+        id2 = canvas.create_oval(x * step_x + step_x // 3, y * step_y + step_y // 3, x * step_x + step_x - step_x // 3, y * step_y + step_y - step_y // 3, fill="white")
+        list_ids.append(id1)
+        list_ids.append(id2)
+    if enemy_ships[y][x] > 0:
+        color = "blue"
+        id1 = canvas.create_rectangle(x * step_x, y * step_y + step_y // 2 - step_y // 10, x * step_x + step_x, y * step_y + step_y // 2 + step_y // 10, fill=color)
+        id2 = canvas.create_rectangle(x * step_x + step_x // 2 - step_x // 10, y * step_y, x * step_x + step_x // 2 + step_x // 10, y * step_y + step_y, fill=color)
+        list_ids.append(id1)
+        list_ids.append(id2)
+
 
 def add_to_all(event):
     _type = 0 #левая кнопка мыши
@@ -86,6 +101,8 @@ def add_to_all(event):
     ip_x = mouse_x // step_x
     ip_y = mouse_y // step_y
     print(ip_x, ip_y, "_type:", _type)
+    if ip_x < s_x and ip_y < s_y:
+        draw_point(ip_x, ip_y)
 
 canvas.bind_all("<Button-1>", add_to_all) #левая кнопка мыши
 canvas.bind_all("<Button-3>", add_to_all) #правая кнопка мыши
