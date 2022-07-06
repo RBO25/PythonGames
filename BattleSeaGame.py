@@ -13,7 +13,8 @@ step_x = size_canvas_x // s_x       #шаг по горизонтали
 step_y = size_canvas_y // s_y       #шаг по вертикали
 size_canvas_x = step_x*s_x
 size_canvas_y = step_y*s_y
-menu_x = step_x * 4
+delta_menu_x = 4
+menu_x = step_x * delta_menu_x
 menu_y = 40
 ships = s_x // 2 #максимальное кол-во кораблей
 ship_len1 = s_x // 5 #длина первого типа коробля
@@ -30,13 +31,14 @@ points2 = [[-1 for i in range(s_x)] for i in range(s_y)]
 # boom - список попаданий
 boom = [[0 for i in range(s_x)] for i in range(s_y)]
 
+# ships_list - список кораблей игрока 1 и игрока 22
+ships_list = []
 
+# hod_igrovomu_polu_1 - если Истина - то ходит игрок №2, иначе ходит игрок №1
+hod_igrovomu_polu_1 = False
 
 #print(enemy_ships1)
 
-
-
-menu_x = 250 #область для кнопок
 
 def on_closing():   #функция для вывода окна с закрытием игры
     global app_running
@@ -56,7 +58,7 @@ canvas.pack()
 tk.update()
 
 def draw_table(offset_x=0): # рисует игровое поле (пересекающиеся линии)
-    for i in range(0, s_x+1):
+    for i in range(0, s_x + 1):
         canvas.create_line(offset_x + step_x * i, 0, offset_x + step_x * i, size_canvas_y)
     for i in range(0, s_y+1):
         canvas.create_line(offset_x, step_y * i, offset_x + size_canvas_x, step_y * i)
@@ -69,10 +71,24 @@ draw_table(size_canvas_x + menu_x)
 t0 = Label(tk, text="Player1", font=("Helvetica", 16))
 t0.place(x=size_canvas_x //2 - t0.winfo_reqwidth() // 2, y=size_canvas_y+3)
 t1 = Label(tk, text="Player2", font=("Helvetica", 16))
-t1.place(x=size_canvas_x + menu_x + size_canvas_x //2 - t1.winfo_reqwidth() // 2, y=size_canvas_y+3)
+t1.place(x=size_canvas_x + menu_x + size_canvas_x // 2 - t1.winfo_reqwidth() // 2, y=size_canvas_y+3)
 
 t0.configure(bg="light green")
 t0.configure(bg="#f0f0f0")
+
+t3 = Label(tk, text="@@@@@@@", font=("Helvetica", 16))
+t3.place(x=size_canvas_x + step_x, y= 3 * step_y)
+
+def mark_igrok(igrok_mark_1):
+    if igrok_mark_1:
+        t0.configure(bg="light green")
+        t1.configure(bg="#f0f0f0")
+        t3.configure(text="Player2")
+    else:
+        t1.configure(bg="light green")
+        t0.configure(bg="#f0f0f0")
+        t3.configure(text="Player1")
+mark_igrok(hod_igrovomu_polu_1)
 
 
 def button_show_enemy1():
@@ -104,6 +120,8 @@ def button_begin_again():
     for el in list_ids:
         canvas.delete(el)
     list_ids = []
+    generate_ships_list()
+    #print(ships_list)
     enemy_ships1 = generate_enemy_ships()
     enemy_ships2 = generate_enemy_ships()
     points1 = [[-1 for i in range(s_x)] for i in range(s_y)]
@@ -135,13 +153,31 @@ def draw_point(x, y):
         list_ids.append(id1)
         list_ids.append(id2)
 
+def draw_point2(x, y, offset_x=size_canvas_x + menu_x):
+    # print(enemy_ships1[y][x])
+    if enemy_ships2[y][x] == 0:
+        color = "red"
+        id1 = canvas.create_oval(offset_x + x * step_x, y * step_y, offset_x + x * step_x + step_x, y * step_y + step_y, fill=color)
+        id2 = canvas.create_oval(offset_x + x * step_x + step_x // 3, y * step_y + step_y // 3, offset_x + x * step_x + step_x - step_x // 3,
+                                 y * step_y + step_y - step_y // 3, fill="white")
+        list_ids.append(id1)
+        list_ids.append(id2)
+    if enemy_ships2[y][x] > 0:
+        color = "blue"
+        id1 = canvas.create_rectangle(offset_x + x * step_x, y * step_y + step_y // 2 - step_y // 10, offset_x + x * step_x + step_x,
+                                      y * step_y + step_y // 2 + step_y // 10, fill=color)
+        id2 = canvas.create_rectangle(offset_x + x * step_x + step_x // 2 - step_x // 10, y * step_y,
+                                      offset_x + x * step_x + step_x // 2 + step_x // 10, y * step_y + step_y, fill=color)
+        list_ids.append(id1)
+        list_ids.append(id2)
+
 def check_winner(x, y):
     win = False
     if enemy_ships1[y][x] > 0:
         boom[y][x] = enemy_ships1[y][x]
     sum_enemy_ships1 = sum(sum(i) for i in zip(*enemy_ships1))
     sum_boom = sum(sum(i) for i in zip(*boom))
-    print(sum_enemy_ships1, sum_boom)
+    # print(sum_enemy_ships1, sum_boom)
     if sum_enemy_ships1 == sum_boom:
         win = True
     return win
@@ -154,11 +190,22 @@ def check_winner2():
             if enemy_ships1[j][i] > 0:
                 if points1[j][i] == -1:
                     win = False
-    print(win)
+    # print(win)
+    return win
+
+
+def check_winner2_igrok_2():
+    win = True
+    for i in range(0, s_x):
+        for j in range(0, s_y):
+            if enemy_ships2[j][i] > 0:
+                if points2[j][i] == -1:
+                    win = False
+    # print(win)
     return win
 
 def add_to_all(event):
-    global points1
+    global points1, points2, hod_igrovomu_polu_1
     _type = 0 #левая кнопка мыши
     if event.num == 3:
         _type = 1 #правая кнопка мыши
@@ -168,30 +215,85 @@ def add_to_all(event):
     #print(mouse_x, mouse_y)
     ip_x = mouse_x // step_x
     ip_y = mouse_y // step_y
-    print(ip_x, ip_y, "_type:", _type)
-    if ip_x < s_x and ip_y < s_y:
+    #print(ip_x, ip_y, "_type:", _type)
+
+    if ip_x < s_x and ip_y < s_y and hod_igrovomu_polu_1:   # для первого игрового поля
         if points1[ip_y][ip_x] == -1:
             points1[ip_y][ip_x] = _type
+            hod_igrovomu_polu_1 = False
             draw_point(ip_x, ip_y)
             # if check_winner(ip_x, ip_y):
             if check_winner2():
-                print("WIN!")
+                hod_igrovomu_polu_1 = True
+                winner = "WIN PLAYER2!"
+                winner_add = "(ALL SHIPS PLAYER1 SUNK)"
+                winner_add1 = "⚓⚓⚓⚓⚓⚓"
+                print(winner, winner_add)
                 points1 = [[10 for i in range(s_x)] for i in range(s_y)]
-        print(len(list_ids))
+                points2 = [[10 for i in range(s_x)] for i in range(s_y)]
+                id1 = canvas.create_rectangle(step_x*3, step_y*3, size_canvas_x + menu_x + size_canvas_x-step_x*3, size_canvas_y-step_y, fill="light blue")
+                list_ids.append(id1)
+                id2 = canvas.create_rectangle(step_x * 3 + step_x // 2, step_y * 3 + step_y // 2,
+                                              size_canvas_x + menu_x + size_canvas_x - step_x * 3 - step_x // 2,
+                                              size_canvas_y - step_y - step_y // 2, fill="yellow")
+                list_ids.append(id2)
+                id3 = canvas.create_text(step_x * 12, step_y * 5, text=winner, font=("Arial", 60), justify=CENTER)
+                id4 = canvas.create_text(step_x * 12, step_y * 6, text=winner_add, font=("Arial", 35), justify=CENTER)
+                id5 = canvas.create_text(step_x * 12, step_y * 7, text=winner_add1, font=("Arial", 35), justify=CENTER)
+                list_ids.append(id3)
+                list_ids.append(id4)
+                list_ids.append(id5)
+        #print(len(list_ids))
 
+    # для второго игрового поля
+    if ip_x >= s_x + delta_menu_x and ip_x <= s_x + s_x + delta_menu_x and ip_y < s_y and not hod_igrovomu_polu_1:        # print("ok")
+        if points2[ip_y][ip_x - s_x - delta_menu_x] == -1:
+            points2[ip_y][ip_x - s_x - delta_menu_x] = _type
+            hod_igrovomu_polu_1 = True
+            draw_point2(ip_x - s_x - delta_menu_x, ip_y)
+            # if check_winner(ip_x, ip_y):
+            if check_winner2_igrok_2():
+                hod_igrovomu_polu_1 = False
+                winner = "WIN PLAYER1!"
+                winner_add = "(ALL SHIPS PLAYER2 SUNK)"
+                winner_add1 = "⚓⚓⚓⚓⚓⚓"
+                points1 = [[10 for i in range(s_x)] for i in range(s_y)]
+                points2 = [[10 for i in range(s_x)] for i in range(s_y)]
+                id1 = canvas.create_rectangle(step_x * 3, step_y * 3,
+                                              size_canvas_x + menu_x + size_canvas_x - step_x * 3,
+                                              size_canvas_y - step_y, fill="light blue")
+                list_ids.append(id1)
+                id2 = canvas.create_rectangle(step_x * 3 + step_x // 2, step_y * 3 + step_y // 2,
+                                              size_canvas_x + menu_x + size_canvas_x - step_x * 3 - step_x // 2,
+                                              size_canvas_y - step_y - step_y // 2, fill="yellow")
+                list_ids.append(id2)
+                id3 = canvas.create_text(step_x * 12, step_y * 5, text=winner, font=("Arial", 60), justify=CENTER)
+                id4 = canvas.create_text(step_x * 12, step_y * 6, text=winner_add, font=("Arial", 35), justify=CENTER)
+                id5 = canvas.create_text(step_x * 12, step_y * 7, text=winner_add1, font=("Arial", 35), justify=CENTER)
+                list_ids.append(id3)
+                list_ids.append(id4)
+                list_ids.append(id5)
+        #print(len(list_ids))
+    mark_igrok(hod_igrovomu_polu_1)
 
 canvas.bind_all("<Button-1>", add_to_all) #левая кнопка мыши
 canvas.bind_all("<Button-3>", add_to_all) #правая кнопка мыши
 
 
-def generate_enemy_ships():
-    enemy_ships = []
+def generate_ships_list():
+    global ships_list
     ships_list = []
     #генерация списка случайных кораблей
     for i in range(0, ships):
         ships_list.append(random.choice([ship_len1, ship_len2, ship_len3]))
     print(ships_list)
 
+
+
+
+def generate_enemy_ships():
+    global ships_list
+    enemy_ships = []
 
     #подсчет суммарной длины кораблей
     sum_1_all_ships = sum(ships_list)
@@ -260,8 +362,11 @@ def generate_enemy_ships():
         # print(sum_1_enemy)
         # print(ships_list)
         # print(enemy_ships)
-        return enemy_ships
+    return enemy_ships
 
+
+generate_ships_list()
+#print(ships_list)
 enemy_ships1 = generate_enemy_ships()
 enemy_ships2 = generate_enemy_ships()
 # print("⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓⚓")
